@@ -1,14 +1,20 @@
+import requests
 import json
-import openai
 from agent.prompt import SYSTEM_PROMPT
 from tools.schema import get_action_schema
 
-openai.api_key = "PASTE_YOUR_API_KEY"
+OPENAI_API_KEY = "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"
 
 def think(user_text, memory_context):
     actions = get_action_schema()
 
-    prompt = f"""
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": f"""
 Memory context:
 {json.dumps(memory_context, indent=2)}
 
@@ -18,14 +24,22 @@ Available actions:
 User said:
 "{user_text}"
 """
-
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
+            }
         ],
-        temperature=0.3
+        "temperature": 0.3
+    }
+
+    headers = {
+        "Authorization": f"Bearer {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}",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.post(
+        "https://api.openai.com/v1/chat/completions",
+        headers=headers,
+        json=payload,
+        timeout=30
     )
 
-    return json.loads(response.choices[0].message.content)
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"]
