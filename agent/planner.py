@@ -1,21 +1,36 @@
+import json
+from agent.llm import think
 from agent.memory import Memory
 
 memory = Memory()
 
-def plan(user_text):
-    # TEMP: bypass LLM completely
-    result = {
-        "thought": "Bypass mode – testing core system",
-        "actions": [
-            {
-                "type": "OPEN_APP",
-                "args": {
-                    "package": "com.whatsapp"
-                }
-            }
-        ],
-        "speech": "I am alive. Core system works."
-    }
+def extract_json(text):
+    if not text:
+        return None
 
-    memory.remember_interaction(user_text, result["speech"])
+    start = text.find("{")
+    end = text.rfind("}") + 1
+
+    if start == -1 or end == -1:
+        return None
+
+    try:
+        return json.loads(text[start:end])
+    except Exception:
+        return None
+
+def plan(user_text):
+    context = memory.get_context()
+
+    raw = think(user_text, context)
+    result = extract_json(raw)
+
+    if not result:
+        result = {
+            "thought": "LLM failed to respond correctly",
+            "actions": [],
+            "speech": "I had trouble thinking. Please try again."
+        }
+
+    memory.remember_interaction(user_text, result.get("speech", ""))
     return result
