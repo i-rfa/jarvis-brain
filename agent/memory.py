@@ -5,9 +5,21 @@ MEMORY_FILE = "data/memory.json"
 
 class Memory:
     def __init__(self):
+        self._ensure_file()
+
+    def _ensure_file(self):
         if not os.path.exists(MEMORY_FILE):
-            with open(MEMORY_FILE, "w") as f:
-                json.dump({"profile": {}, "history": []}, f)
+            self._reset_file()
+        else:
+            try:
+                with open(MEMORY_FILE, "r") as f:
+                    json.load(f)
+            except Exception:
+                self._reset_file()
+
+    def _reset_file(self):
+        with open(MEMORY_FILE, "w") as f:
+            json.dump({"profile": {}, "history": []}, f, indent=2)
 
     def load(self):
         with open(MEMORY_FILE, "r") as f:
@@ -27,4 +39,4 @@ class Memory:
 
     def get_context(self, limit=5):
         data = self.load()
-        return data["history"][-limit:]
+        return data.get("history", [])[-limit:]
